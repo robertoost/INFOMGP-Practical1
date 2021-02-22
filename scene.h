@@ -146,9 +146,6 @@ public:
     /***************
      TODO
      ***************/
-    if (timeStep == 0) {
-        return;
-    }
 
     // Determine Center of Mass translation based on velocity integration
     COM += comVelocity * timeStep;
@@ -156,10 +153,13 @@ public:
     // Determine orientation (rotation) based on angular velocity integration
     Eigen::RowVector3d deltaAng = angVelocity * timeStep;
     double theta = deltaAng.norm();
-    Eigen::RowVector3d e = deltaAng / theta;
-    Eigen::RowVector4d deltaOrientation;
-    deltaOrientation << cos(theta / 2), e* sin(theta / 2);
-    orientation = QMult(deltaOrientation, orientation);
+    if (theta != 0) {
+        Eigen::RowVector3d e = deltaAng / theta;
+        Eigen::RowVector4d deltaOrientation;
+        deltaOrientation << cos(theta / 2), e* sin(theta / 2);
+        orientation = QMult(deltaOrientation, orientation);
+    }
+
     
     // Apply translation and rotation
     for (int i=0;i<currV.rows();i++)
