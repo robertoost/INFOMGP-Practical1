@@ -237,23 +237,25 @@ public:
   
   //Integrating the linear and angular velocities of the object
   //You need to modify this to integrate from acceleration in the field (basically gravity)
-  void updateVelocity(double timeStep){
+  void updateVelocity(double timeStep, double dragCoeff){
     
     if (isFixed)
       return;
 
     //angVelocity = RowVector3d(2., 0., 0.);
-    
     //integrating external forces (only gravity)
     Vector3d gravity; gravity<<0,-9.8,0.0;
     comVelocity+=gravity*timeStep;
+
+    RowVector3d fDrag = -dragCoeff * comVelocity;
+    comVelocity -= (fDrag / totalMass * timeStep);
   }
   
   
   //the full integration for the time step (velocity + position)
   //You need to modify this if you are changing the integration
-  void integrate(double timeStep){
-    updateVelocity(timeStep);
+  void integrate(double timeStep, double dragCoeff){
+    updateVelocity(timeStep, dragCoeff);
     updatePosition(timeStep);
   }
   
@@ -380,11 +382,11 @@ public:
    2. detecting and handling collisions with the coefficient of restitutation CRCoeff
    3. updating the visual scene in fullV and fullT
    *********************************************************************/
-  void updateScene(double timeStep, double CRCoeff){
+  void updateScene(double timeStep, double CRCoeff, double dragCoeff){
     
     //integrating velocity, position and orientation from forces and previous states
     for (int i=0;i<meshes.size();i++)
-      meshes[i].integrate(timeStep);
+      meshes[i].integrate(timeStep, dragCoeff);
     
     //detecting and handling collisions when found
     //This is done exhaustively: checking every two objects in the scene.
