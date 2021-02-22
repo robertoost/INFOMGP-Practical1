@@ -242,13 +242,20 @@ public:
     if (isFixed)
       return;
 
+    // Tester for angular velocity -> TO BE REMOVED
     //angVelocity = RowVector3d(2., 0., 0.);
+
     //integrating external forces (only gravity)
     Vector3d gravity; gravity<<0,-9.8,0.0;
     comVelocity+=gravity*timeStep;
 
-    RowVector3d fDrag = -dragCoeff * comVelocity;
-    comVelocity -= (fDrag / totalMass * timeStep);
+    // Apply drag to linear velocity
+    RowVector3d comFDrag = -dragCoeff * comVelocity;
+    comVelocity += (comFDrag / totalMass * timeStep);
+
+    // Apply drag to angular velocity
+    RowVector3d angFDrag = -dragCoeff * angVelocity;
+    angVelocity += (angFDrag / totalMass * timeStep);
   }
   
   
