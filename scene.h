@@ -255,7 +255,7 @@ public:
 
     // Apply drag to angular velocity
     RowVector3d angFDrag = -dragCoeff * angVelocity;
-    angVelocity += (angFDrag / totalMass * timeStep);
+    angVelocity += (angFDrag * invIT * timeStep);
   }
   
   
