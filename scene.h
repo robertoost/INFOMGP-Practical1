@@ -127,12 +127,7 @@ public:
   //return the current inverted inertia tensor around the current COM. Update it by applying the orientation
   Matrix3d getCurrInvInertiaTensor(){
     Matrix3d R=Q2RotMatrix(orientation);
-    
-    /***************
-     TODO
-     ***************/
-    
-    return Matrix3d::Identity(3,3);  //change this to your result
+    return R.transpose() * invIT * R;
   }
   
   
@@ -182,6 +177,29 @@ public:
     /***************
      TODO
      ***************/
+    
+    // Go through the list of impulses.
+    for(int i=0; i<currImpulses.size(); i++) {
+      
+      // Create easier to read variables.
+      Impulse impulse = currImpulses[i];
+      RowVector3d impulsePosition = impulse.first;
+      RowVector3d impulseDirection = impulse.second;
+
+      // Calculate the new center of mass velocity after the impulse.
+      comVelocity = (impulseDirection / totalMass ) + comVelocity;
+
+      // Use the cross product of the contact arm and the impulse direction to get the torque impulse.
+      RowVector3d contactArm = impulsePosition - COM;
+      RowVector3d torqueImpulse = contactArm.cross(impulseDirection);
+
+      Matrix3d currInvInertiaTensor = getCurrInvInertiaTensor();
+
+      // Calculate the new angular velocity after the impulse.
+      angVelocity = (torqueImpulse * currInvInertiaTensor) + angVelocity;
+    }
+
+    currImpulses.clear();
   }
   
   RowVector3d initStaticProperties(const double density)
@@ -254,8 +272,9 @@ public:
     comVelocity += (comFDrag / totalMass * timeStep);
 
     // Apply drag to angular velocity
+    Matrix3d currInvInertiaTensor = getCurrInvInertiaTensor();
     RowVector3d angFDrag = -dragCoeff * angVelocity;
-    angVelocity += (angFDrag * invIT * timeStep);
+    angVelocity += (angFDrag * currInvInertiaTensor * timeStep);
   }
   
   
@@ -346,27 +365,48 @@ public:
     
     //Interpretation resolution: move each object by inverse mass weighting, unless either is fixed, and then move the other. Remember to respect the direction of contactNormal and update penPosition accordingly.
     RowVector3d contactPosition;
+    RowVector3d unitNormalVector = contactNormal.normalized();
+    RowVector3d linProjection = depth * unitNormalVector;
+
+    RowVector3d totalCollisionVelocity;
+    double totalCollisionMass;
+
     if (m1.isFixed){
       /***************
        TODO
        ***************/
+
+      m2.COM += linProjection;
+      contactPosition = penPosition + linProjection;
+
+      totalCollisionVelocity = m2.comVelocity;
+      totalCollisionMass = 1 / m2.totalMass;
     } else if (m2.isFixed){
       /***************
        TODO
        ***************/
+
+      m1.COM -= linProjection;
+      contactPosition = penPosition - linProjection;
+
+      totalCollisionVelocity = m1.comVelocity * -1;
+      totalCollisionMass = 1 / m1.totalMass;
     } else { //inverse mass weighting
       /***************
        TODO
        ***************/
+      totalCollisionVelocity = m2.comVelocity - m1.comVelocity;
+      totalCollisionMass = 1/m1.totalMass + 1/m2.totalMass;
     }
-    
+
+    double j = -1*(((1+CRCoeff)*(totalCollisionVelocity).dot(unitNormalVector)) / totalCollisionMass );
     
     //Create impulse and push them into m1.impulses and m2.impulses.
     /***************
      TODO
      ***************/
     
-    RowVector3d impulse=RowVector3d::Zero();  //change this to your result
+    RowVector3d impulse = j * unitNormalVector;  //change this to your result
     
     std::cout<<"impulse: "<<impulse<<std::endl;
     if (impulse.norm()>10e-6){
