@@ -369,44 +369,59 @@ public:
     RowVector3d linProjection = depth * unitNormalVector;
 
     RowVector3d totalCollisionVelocity;
+    RowVector3d totalVelocity;
     double totalCollisionMass;
+    double totalCollisionInertia;
 
     if (m1.isFixed){
-      /***************
-       TODO
-       ***************/
-
+      // Interpenetration resolution
       m2.COM += linProjection;
       contactPosition = penPosition + linProjection;
 
-      totalCollisionVelocity = m2.comVelocity;
-      totalCollisionMass = 1 / m2.totalMass;
-    } else if (m2.isFixed){
-      /***************
-       TODO
-       ***************/
+      // Contact arms
+      RowVector3d r2 = contactPosition - m2.COM;
 
+      // Total inverse mass and inertia needed for finding impulse
+      totalCollisionMass = 1 / m2.totalMass;
+      totalCollisionInertia = (r2.cross(unitNormalVector) * m2.getCurrInvInertiaTensor() * r2.cross(unitNormalVector).transpose());
+
+      // Total velocity needed for finding impulse
+      totalVelocity = m2.comVelocity + m2.angVelocity.cross(r2);
+
+    } else if (m2.isFixed){
+      // Interpenetration resolution
       m1.COM -= linProjection;
       contactPosition = penPosition - linProjection;
 
-      totalCollisionVelocity = m1.comVelocity * -1;
+      // Contact arms
+      RowVector3d r1 = contactPosition - m1.COM;
+
+      // Total inverse mass and inertia needed for finding impulse
       totalCollisionMass = 1 / m1.totalMass;
+      totalCollisionInertia = (r1.cross(unitNormalVector) * m1.getCurrInvInertiaTensor() * r1.cross(unitNormalVector).transpose());
+
+      // Total velocity needed for finding impulse
+      totalVelocity = - 1 * (m1.comVelocity + m1.angVelocity.cross(r1));
+
     } else { //inverse mass weighting
-      /***************
-       TODO
-       ***************/
-      totalCollisionVelocity = m2.comVelocity - m1.comVelocity;
+      // Contact arms
+      RowVector3d r1 = contactPosition - m1.COM;
+      RowVector3d r2 = contactPosition - m2.COM;
+
+      // Total inverse mass and inertia needed for finding impulse
       totalCollisionMass = 1/m1.totalMass + 1/m2.totalMass;
+      double totalCollisionInertia1 = (r1.cross(unitNormalVector) * m1.getCurrInvInertiaTensor() * r1.cross(unitNormalVector).transpose());
+      double totalCollisionInertia2 = (r2.cross(unitNormalVector) * m2.getCurrInvInertiaTensor() * r2.cross(unitNormalVector).transpose());
+      totalCollisionInertia = totalCollisionInertia1 + totalCollisionInertia2;
+      
+      // Total velocity needed for finding impulse
+      totalVelocity = m2.comVelocity + m2.angVelocity.cross(r2) -1 * (m1.comVelocity + m1.angVelocity.cross(r1));
     }
 
-    double j = -1*(((1+CRCoeff)*(totalCollisionVelocity).dot(unitNormalVector)) / totalCollisionMass );
+    double j = -1*(((1+CRCoeff)*(totalVelocity).dot(unitNormalVector)) / (totalCollisionMass + totalCollisionInertia) );
     
-    //Create impulse and push them into m1.impulses and m2.impulses.
-    /***************
-     TODO
-     ***************/
-    
-    RowVector3d impulse = j * unitNormalVector;  //change this to your result
+    //Create impulse and push them into m1.impulses and m2.impulses.   
+    RowVector3d impulse = j * unitNormalVector;
     
     std::cout<<"impulse: "<<impulse<<std::endl;
     if (impulse.norm()>10e-6){
