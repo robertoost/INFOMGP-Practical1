@@ -13,9 +13,11 @@ igl::opengl::glfw::Viewer mgpViewer;
 float currTime = 0;
 
 //initial values
-float timeStep = 0.02;
-float CRCoeff= 1.0;
-float dragCoeff = 0.1;
+float timeStep = 0.02f;
+float CRCoeff= 1.0f;
+float dragCoeff = 0.1f;
+Eigen::Vector3f initialVelocity;
+bool appliedInitialVelocity = false;
 
 Scene scene;
 
@@ -84,6 +86,11 @@ void updateMeshes(igl::opengl::glfw::Viewer &viewer)
 
 bool key_down(igl::opengl::glfw::Viewer &viewer, unsigned char key, int modifier)
 {
+  if ( (key == ' ' || key == 'S') && !appliedInitialVelocity ) {
+    scene.applyVelocity(initialVelocity.cast<double>());
+    appliedInitialVelocity = true;
+  }
+
   if (key == ' ')
   {
     viewer.core().is_animating = !viewer.core().is_animating;
@@ -139,6 +146,7 @@ class CustomMenu : public igl::opengl::glfw::imgui::ImGuiMenu
     {
       ImGui::InputFloat("CR Coeff",&CRCoeff,0,0,3);
       ImGui::InputFloat("Drag Coeff",&dragCoeff,0,0,3);
+      ImGui::InputFloat3("Initial Velocity",initialVelocity.data());
 
       
       if (ImGui::InputFloat("Time Step", &timeStep)) {
