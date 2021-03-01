@@ -126,8 +126,11 @@ public:
   
   //return the current inverted inertia tensor around the current COM. Update it by applying the orientation
   Matrix3d getCurrInvInertiaTensor(){
+    /***************
+     TODO - done
+    ***************/
     Matrix3d R=Q2RotMatrix(orientation);
-    return R.transpose() * invIT * R;
+    return R * invIT * R.transpose();
   }
   
   
@@ -139,7 +142,7 @@ public:
       return;  //a fixed object is immobile
     
     /***************
-     TODO
+     TODO - done
      ***************/
 
     // Determine Center of Mass translation based on velocity integration
@@ -175,7 +178,7 @@ public:
     
     //update linear and angular velocity according to all impulses
     /***************
-     TODO
+     TODO - done
      ***************/
     
     // Go through the list of impulses.
@@ -259,9 +262,6 @@ public:
     
     if (isFixed)
       return;
-
-    // Tester for angular velocity -> TO BE REMOVED
-    //angVelocity = RowVector3d(2., 0., 0.);
 
     //integrating external forces (only gravity)
     Vector3d gravity; gravity<<0,-9.8,0.0;
@@ -404,6 +404,11 @@ public:
       totalVelocity = - 1 * (m1.comVelocity + m1.angVelocity.cross(r1));
 
     } else { //inverse mass weighting
+      // Interpenetration resolution
+      m1.COM -= linProjection * m2.totalMass / (m1.totalMass + m2.totalMass);
+      m2.COM += linProjection * m1.totalMass / (m1.totalMass + m2.totalMass);
+      contactPosition = penPosition + linProjection * m1.totalMass / (m1.totalMass + m2.totalMass);
+
       // Contact arms
       RowVector3d r1 = contactPosition - m1.COM;
       RowVector3d r2 = contactPosition - m2.COM;
@@ -418,7 +423,7 @@ public:
       totalVelocity = m2.comVelocity + m2.angVelocity.cross(r2) -1 * (m1.comVelocity + m1.angVelocity.cross(r1));
     }
 
-    double j = -1*(((1+CRCoeff)*(totalVelocity).dot(unitNormalVector)) / (totalCollisionMass + totalCollisionInertia) );
+    double j = -1*(((1+CRCoeff)*(totalVelocity).dot(unitNormalVector)) / (totalCollisionMass + totalCollisionInertia));
     
     //Create impulse and push them into m1.impulses and m2.impulses.   
     RowVector3d impulse = j * unitNormalVector;
@@ -434,6 +439,7 @@ public:
     //updating velocities according to impulses
     m1.updateImpulseVelocities();
     m2.updateImpulseVelocities();
+
   }
   
   
