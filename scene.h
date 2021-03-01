@@ -254,8 +254,7 @@ public:
     return naturalCOM;
     
   }
-  
-  
+
   //Integrating the linear and angular velocities of the object
   //You need to modify this to integrate from acceleration in the field (basically gravity)
   void updateVelocity(double timeStep, double dragCoeff){
@@ -346,6 +345,13 @@ public:
     Mesh m(V,F, T, density, isFixed, COM, orientation);
     meshes.push_back(m);
   }
+
+  void applyVelocity(Eigen::RowVector3d velocity){
+    for (int i=0;i<meshes.size();i++){
+      meshes[i].comVelocity += velocity;      
+    }
+  }
+
   
   /*********************************************************************
    This function handles a collision between objects ro1 and ro2 when found, by assigning impulses to both objects.
