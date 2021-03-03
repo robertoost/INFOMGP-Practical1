@@ -144,8 +144,8 @@ class CustomMenu : public igl::opengl::glfw::imgui::ImGuiMenu
     // Add new group
     if (ImGui::CollapsingHeader("Algorithm Options", ImGuiTreeNodeFlags_DefaultOpen))
     {
-      ImGui::InputFloat("CR Coeff",&CRCoeff,0,0,3);
-      ImGui::InputFloat("Drag Coeff",&dragCoeff,0,0,3);
+      ImGui::InputFloat("CR Coeff",&CRCoeff,0,0);
+      ImGui::InputFloat("Drag Coeff",&dragCoeff,0,0);
       ImGui::InputFloat3("Initial Velocity",initialVelocity.data());
 
       
