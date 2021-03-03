@@ -129,6 +129,7 @@ public:
     /***************
      TODO - done
     ***************/
+    
     Matrix3d R=Q2RotMatrix(orientation);
     return R * invIT * R.transpose();
   }
@@ -147,14 +148,24 @@ public:
 
     // Determine Center of Mass translation based on velocity integration
     COM += comVelocity * timeStep;
+    
+    /***************
+    Determine orientation (rotation) based on angular velocity integration
+     ***************/
 
-    // Determine orientation (rotation) based on angular velocity integration
+    // Determine change in angle based off angular velocity and timestep.
     Eigen::RowVector3d deltaAng = angVelocity * timeStep;
-    double theta = deltaAng.norm();
-    if (theta != 0) {
-        Eigen::RowVector3d e = deltaAng / theta;
+    double rotationAngle = deltaAng.norm();
+
+    // If the rotation angle is 0, we don't need to rotate anything.
+    if (rotationAngle != 0) {
+
+        // Convert the rotation vector into a rotation quaternion.
+        Eigen::RowVector3d rotationAxis = deltaAng / rotationAngle;
         Eigen::RowVector4d deltaOrientation;
-        deltaOrientation << cos(theta / 2), e* sin(theta / 2);
+        deltaOrientation << cos(rotationAngle / 2), rotationAxis * sin(rotationAngle / 2);
+
+        // Multiply the previous orientation with the change in rotation.
         orientation = QMult(deltaOrientation, orientation);
     }
 
@@ -346,6 +357,7 @@ public:
     meshes.push_back(m);
   }
 
+  // Immediately adds a velocity to every mesh in the scene.
   void applyVelocity(Eigen::RowVector3d velocity){
     for (int i=0;i<meshes.size();i++){
       meshes[i].comVelocity += velocity;      
