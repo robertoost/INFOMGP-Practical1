@@ -277,14 +277,14 @@ public:
     Vector3d gravity; gravity<<0,-9.8,0.0;
     comVelocity+=gravity*timeStep;
 
-    // Apply drag to linear velocity
-    RowVector3d comFDrag = -dragCoeff * comVelocity;
-    comVelocity += (comFDrag / totalMass * timeStep);
+    // Apply drag to linear velocity (drag is made scale-invariant wrt mass)
+    RowVector3d comFDrag = -dragCoeff * comVelocity; // times totalMass
+    comVelocity += comFDrag * timeStep;              // divided by totalMass
 
-    // Apply drag to angular velocity
-    Matrix3d currInvInertiaTensor = getCurrInvInertiaTensor();
-    RowVector3d angFDrag = -dragCoeff * angVelocity;
-    angVelocity += (angFDrag * currInvInertiaTensor * timeStep);
+    // Apply drag to angular velocity (drag is made scale-invariant wrt mass)
+    // Matrix3d currInvInertiaTensor = getCurrInvInertiaTensor();
+    RowVector3d angFDrag = -dragCoeff * angVelocity; // times current inertia
+    angVelocity += angFDrag * timeStep; // / times current inverted inertia
   }
   
   
